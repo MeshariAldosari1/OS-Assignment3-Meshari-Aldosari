@@ -251,13 +251,13 @@ Feature3: Added semaphore instead of busy waiting and a shutdown signal
 
 > 💡 **TIP:** Fill this in **last**, after all entries are written.
 
-**Total time spent on assignment**: [X hours]
+**Total time spent on assignment**: [5 hours over 4 days]
 
-**Most challenging part**:
+**Most challenging part**:Feature 3, as it impacts the CPU "loop" code: I had to delete the polling code, block the CPUs on the semaphore, and block the CPUs courtesy shutdown when the final task has been completed.
 
-**Most interesting learning**:
+**Most interesting learning**:A program may be busted but right on result. My initial run had 4 lines that displayed a ✔, but it self-destructed CPU-1 because of 2 CPU's ganging up on the same process from the queue.
 
-**What I would do differently next time**:
+**What I would do differently next time**:You will immediately know if you have missed a brace or a duplicate variable and will run the original starter more often and so see all the kinds of failures. Compile after each tiny change, not after you have finished an entire feature.
 
 ---
 

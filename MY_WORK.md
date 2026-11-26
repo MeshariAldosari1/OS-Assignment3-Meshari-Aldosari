@@ -277,7 +277,7 @@ Feature3: Added semaphore instead of busy waiting and a shutdown signal
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+[Here I discovered that a race condition was if numerous threads attacked the same shared data, then the result depended on the order they ran. The contextSwitchCount++ operation seems like one step, but it actually has a read, change, and write, and another thread can run in between, which is what RaceWindow.pause() simulates. Accessing shared data is a critical area and needs mutual exclusion, and I only ever wanted one thread at a time to poll() or increment a counter, so I made that a ReentrantLock. I also learned that unlock() should always be in a finally block; otherwise, an exception or an early return will leave the lock taken and will block all the other threads. I also learned from my counting semaphore that waiting to lock is waiting right too: instead of bombing the queue for a process in a loop, a CPU now sleeps in acquire() until one shows up. The most surprising was my first run: all verification lines were ✔, and CPU-1 broke with IllegalThreadStateException, teaching me that race problems can lie behind nice results.]
 
 ## Question 2: What was the most challenging part of this assignment?
 
@@ -285,7 +285,7 @@ Feature3: Added semaphore instead of busy waiting and a shutdown signal
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+[The hardest part was Feature 3: switching from busy waiting to a counting semaphore and allowing a clean shutdown of Cpus. For Feature 3, the CPUWorker loop logic changes; Features 1 and 2 do the same process (lock(), try, finally, unlock()). I had to sort out where to put the call to acquire(); before poll(), it turns out, should be the place, not within the queue lock, as then the CPU would fall asleep with that lock and no one could call add(). Only then I felt safe to remove the if (thread==null) block, knowing that after acquire() the queue is always non-empty. But the hardest question was at the end of the simulation: after the last process is finished, add() is not performed anymore, and the other CPU would wait forever in acquire(). This was difficult, because this problem did not arise throughout the simulation at all, just at the conclusion, and the program would just freeze until the watchdog kills it.]
 
 ## Question 3: How did you overcome the challenges you faced?
 
@@ -293,7 +293,7 @@ Feature3: Added semaphore instead of busy waiting and a shutdown signal
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+[I imported again the list of Common Mistakes (where I advise you that don't wait for a semaphore with the lock and don't forget to do shutdown signal from the README part 3 Feature 3), and tried again: Next, I scribbled out on paper how the lives of the two CPUs would go: CPU-1 finished the last process, and CPU-2 blocked in acquire(), confirming that the CPU with completedProcessCount == totalProcesses must execute release(totalCPUs). I placed the check after acquire() since a CPU awakened by this signal should not poll() an empty queue but complete. When my code failed to build, I carefully reviewed the errors and discovered that I had forgetting a closing bracket in addServiceTime() and that I had a duplicate Thread thread declaration in add(). I consulted the textbook on semaphores and the bounded-buffer problem to verify my design. Finally, I ran the final version 5 times and verified that the four verification lines all showed ✔ and that the program terminated itself.]
 
 ## Question 4: Where can synchronization concepts be applied in real-world applications?
 
@@ -301,19 +301,19 @@ Feature3: Added semaphore instead of busy waiting and a shutdown signal
 
 **Your Answer:** *(5-7 sentences)*
 
-[Write your answer here.]
+Two withdrawals from an account are a read-modify-write on a balance shared in a banking system, similar to contextSwitchCount, and therefore one will overwrite an update to it without lock and money will appear/disappear. • Indian reservations/booked seats/tickets: Two people can check for 1 free seat at the same time, same like my 2 cpus can check to find P1 on top of the line at the same time, therefore "is it free?" and "book it!" have to be 1 crucial section. Many server threads update a visitor counter on a Web site at the same time, just like my statistics counters. A print queue: a producer-consumer problem like my ready queue (applications add jobs, the printer removes them), and my counting semaphore they put the printer to sleep when there are no jobs rather than checking the queue all the time. The database systems provide an example: locks to protect against transactions' getting inconsistent behavior from concurrent users modifying the same tables and deadlock when one transaction requires several locks. Finally, operating systems' ready queues and process tables (on multicore processors) protect simulations.]
 
 ### Optional: What would you like to learn more about?
 
-[Any topics related to synchronization or operating systems that you're curious about?]
+[I also want the chance to delve deeper into condition variables (Chaps. 6 & 7) and monitors and to see how in fact the Linux kernel employs spin locks and mutex locks on multicore CPUs.]
 
 ### Optional: How confident do you feel about synchronization concepts now?
 
-[Beginner / Intermediate / Confident. What do you understand well? What needs more practice?]
+[Medium. I have a solid grasp on race situations, mutex locks with try/finally, counting semaphores, and the producer-consumer conundrum, which I have used in my code. I still need to master fairness, hunger prevention, and deadlock prevention in multi-lock programs.]
 
 ### Optional: Feedback on the assignment
 
-[Any comments? Was it helpful? Too easy or hard? Suggestions?]
+The assignment itself was beneficial because RaceWindow offers you the race conditions, and the verification block is an intuitive approach to test your solution. The most fascinating element was feature 3 since it combines the semaphore and the killing of the threads in the right way.]
 
 ---
 

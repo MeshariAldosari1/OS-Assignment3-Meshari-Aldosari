@@ -32,11 +32,11 @@
 
 | Field | Your Answer |
 |-------|-------------|
-| **Full Name** | [Write your full name here] |
-| **Student ID** | [Write your student ID here] |
-| **University Email** | [yourid]@std.psau.edu.sa |
-| **GitHub Username** | [your-github-username] |
-| **Repository Link** | [Paste your repository link here] |
+| **Full Name** | [Meshari Mohammed Aldosari] |
+| **Student ID** | [446050918] |
+| **University Email** | [446050918]@std.psau.edu.sa |
+| **GitHub Username** | [MeshariAldosari1] |
+| **Repository Link** | [https://github.com/MeshariAldosari1/OS-Assignment3-Meshari-Aldosari] |
  
 ---
 
@@ -132,68 +132,105 @@
 
 ## Your Development Log
 
-### Entry 1 - [Date and Time]
-**What I did**:
+### Entry 1 - [November 23, 2026, 12:10 AM]
+**What I did**:Set up the repository and set my student ID
 
-**Details**:
+**Details**:Forked the makopt/OS-Assignment3-Starter-481 repository to my university GitHub account (446050918@std.psau.edu.sa)
+Renamed the fork to OS-Assignment3-Meshari-Aldosari and checked that it is public in Settings
+I cloned it to VS Code and logged onto GitHub in VS Code
+Changed student ID on line 304 to my ID (446050918)
 
-**Challenges**:
+**Challenges**:Linking VS Code to my GitHub account and making sure the commit uses my university email
 
-**Solution**:
+**Solution**:Logged in with GitHub from the account icon in VS Code and configured user.name and user.Set user.name and user.email using git config --global and verified the commit shows my university email at github.com.
 
-**Time spent**:
-
----
-
-### Entry 2 - [Date and Time]
-**What I did**:
-
-**Details**:
-
-**Challenges**:
-
-**Solution**:
-
-**Time spent**:
+**Time spent**: 20 minutes
 
 ---
 
-### Entry 3 - [Date and Time]
-**What I did**:
+### Entry 2 - [November 23, 2026, 11:20 AM]
+**What I did**:Read README and code, run the starter, then implement Feature 1 (ready queue lock).
 
 **Details**:
+1.Read the whole SchedulerSimulationSync.java: SharedStats, ReadyQueue, Process, CpuWorker and RaceWindow.pause()
 
-**Challenges**:
+2.My parameters: 15 processes, time quantum 5000 ms, 2 CPUs; expected values 31 quanta, 15 completed processes, 114087 ms of service time
 
-**Solution**:
+3.Ran the original starter and saved the output: both CPUs printed picks P1, then Exception in thread "CPU-1" java.lang.IllegalThreadStateException at line 283 (thread.start()), and CPU-2 executed all the processes alone
 
-**Time spent**:
+4.Added import java.util.concurrent.locks.ReentrantLock; and declared private final ReentrantLock queueLock = new ReentrantLock(); in ReadyQueue
+
+ 5.Wrapped readyQueue's add(), poll(), processOf() and snapshot() with usQueueLock.lock() / try / finally { usQueueLock.unlock(); } and put a short remark (in EN) on all changes.
+
+6. 12:46 PM: Committed and Pushed: Feature 1: re-entrant lock protecting ready queue
+
+**Challenges**:At first, I assumed the starter was right because the last block of the starter run was full with ✔ with cpu-1 crashing. With the two returns in poll(), I wasn't sure if the lock would still be released.
+
+**Solution**:P1: poll() RaceWindow.pause() allowed the other similar CPU to read the same head before removeFirst(), therefore both CPUs obtained the identical Thread object (can't start a thread twice). The COUNTERS were just the right ones because the other CPU was alone. Also discovered that finally does execute (even after a return), don't unlock() before return.
+
+**Time spent**:1 hour
 
 ---
 
-### Entry 4 - [Date and Time]
-**What I did**:
+### Entry 3 - [November 24, 2026, 10:35 AM]
+**What I did**:Feature 2: protected the shared statistics with three ReentrantLocks
 
-**Details**:
+**Details**: 
+1.Declared contextSwitchLock, completedLock and serviceTimeLock in SharedStats (one lock per shared variable)
 
-**Challenges**:
+2.Protected the three update methods incrementContextSwitch(), incrementCompletedProcess() and addServiceTime() with lock() + try/finally
 
-**Solution**:
+3.Protected the three getters with the same lock as their update method
 
-**Time spent**:
+4.Committed and pushed at 11:19 AM: Feature 2: Added a separate lock for each shared counter
+
+**Challenges**:Choosing between one lock for the three variables and one lock per variable
+
+**Solution**:The 3 variables are independent, each method only reads/writes 1 of the 3 variables. One lock per variable means less contention (1 ms RaceWindow.pause() inside each important area); a thread incrementing the service time doesn't block a thread incrementing the context switch counter.
+
+**Time spent**: 45 minutes
 
 ---
 
-### Entry 5 - [Date and Time]
-**What I did**:
+### Entry 4 - [November 25, 2026, 4:25 PM]
+**What I did**:Feature 3: replaced busy waiting with a counting semaphore and added a clean shutdown
 
 **Details**:
+Added import java.util.concurrent.Semaphore; and declared private final Semaphore readyCount = new Semaphore(0); in ReadyQueue
 
-**Challenges**:
+Called readyCount.release() in add(), after queueLock.unlock()
 
-**Solution**:
+Added two methods in ReadyQueue: waitForProcess() (calls acquire()) and wakeUpAll(int count) (calls release(count))
 
-**Time spent**:
+In CpuWorker.run(), called waitForProcess() before poll(), and deleted the polling code (if (thread == null), busyWaitPolls.incrementAndGet(), Thread.sleep(20), continue)
+
+At the end of the loop, the CPU that sees completedProcessCount == totalProcesses calls wakeUpAll(SharedStats.totalCPUs) and stops; a CPU woken by this signal checks the counter and stops instead of calling poll()
+
+**Challenges**:I didn't even know if I had to eliminate the polling block or just add the semaphore I also have to consider what happens to the other CPU once the last process is done.
+
+**Solution**:When acquire() returns, there is always at least one process in the queue, therefore poll() will never return null, and the polling block is no longer required. But without the signal to shutdown, the other CPU would get stuck in acquire() indefinitely, while add() would never be called again, and the watchdog would kill the program.
+
+**Time spent**:1 hour 5 minutes
+
+---
+
+### Entry 5 - [November 25, 2026, 5:30 PM]
+**What I did**:Fix compile error, test last version, commit feature 3
+
+**Details**:
+Looked over all my modifications in SharedStats and ReadyQueue and fixed 2 compilation errors
+
+Ran 5 last times, every time success: 31 / 15 / 114087 / 0 and all ✔ All matches matched ✔ Program exited itself with no watchdog
+
+It began with CPU-2 printing P2 and CPU-1 printing P1 and then ran in parallel till the end with both CPUs. 
+
+Feature3: Added semaphore instead of busy waiting and a shutdown signal
+
+**Challenges**:It didn't compile. In addServiceTime() I did not place the last } of addServiceTime()'s method after the finally. In add() I had Thread thread = new Thread(process) 2x (before lock() and in try) thus gave that variable thread is already created.
+
+**Solution**:I added the missing brace (a method with try/finally finishes on 2 braces, one final, one for the method) and truncated the extra line before lock() I also fixed the first remarks in poll() that I had inadvertently modified.
+
+**Time spent**:15 minutes
 
 ---
 
